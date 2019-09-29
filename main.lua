@@ -20,8 +20,9 @@ local greenPad = pad:new{
 local background = bg:new()
 
 local state = "start" -- "game", "restart", "finish"
-local game = {}
+local game = {player1 = 0, player2 = 0}
 local start = {}
+local finish = {}
 
 local function CheckCollision(x1,y1,w1,_, x2,y2,w2,h2)
   return (x1 + w1) > x2 and (x1 + w1) < (x2 + w2) and y1 > y2 and y1 < (y2 + h2),
@@ -40,11 +41,36 @@ local function checkBodiesCollision(body)
     end
 end
 
+local function checkWin()
+    local totalScore = game.player1 + game.player2
+    if totalScore > 8 then
+        state = "finish"
+    end
+end
+
+local function restartMatch()
+    ball.x = 416
+    ball.dirX = -ball.dirX
+    checkWin()
+end
+
+local function checkExit()
+    if ball.x < -ball.sideSize then
+        game.player2 = game.player2 + 1
+        restartMatch()
+    elseif ball.x > 800 then
+        game.player1 = game.player1 + 1
+        restartMatch()
+    end
+end
+
 function game.draw()
     background:draw()
     bluePad:draw()
     greenPad:draw()
     ball:draw()
+    love.graphics.print(game.player1, 40, 20)
+    love.graphics.print(game.player2, 740, 20)
 end
 
 function game.update(dt)
@@ -53,6 +79,7 @@ function game.update(dt)
     ball:update(dt)
     checkBodiesCollision(bluePad)
     checkBodiesCollision(greenPad)
+    checkExit()
 end
 
 function start.draw()
@@ -68,12 +95,22 @@ function start.update(_)
     end
 end
 
+function finish.draw()
+    background:draw()
+    local winner = "The winner is Player 2"
+    if game.player1 > game.player2 then
+        winner = "The winner is Player 1"
+    end
+    love.graphics.printf(winner, 0, 40, 800, "center")
+end
+
 function love.draw()
     if state == "start" then
         start.draw()
     elseif state == "game" then
         game.draw()
     elseif state == "finish" then
+        finish.draw()
     elseif state == "restart" then
     end
 end
